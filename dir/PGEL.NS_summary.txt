@@ -1,0 +1,16 @@
+PGEL.NS Technical Analysis Summary - 2025-07-01
+--------------------------------------------------------
+Current Price: Rs.754.65
+3-Month Forecast Range: Rs.942.66 - Rs.1180.82
+Median Forecast: Rs.1060.40
+
+Technical Indicators:
+• RSI (14): 44.76 (Neutral)
+• MACD Status: Bullish
+• Bollinger Bands: Within Bands (Normal Range)
+• VWAP: Rs.761.08 | Price is below VWAP
+
+Trading Signals:
+• RSI Signal: HOLD
+• MACD Signal: BUY
+• Overall Trend: BULLISH
