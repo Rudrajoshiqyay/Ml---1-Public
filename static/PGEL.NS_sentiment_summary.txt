@@ -1,0 +1,42 @@
+PGEL.NS Advanced Analysis with Sentiment - 2026-01-12
+========================================================
+
+CURRENT STATUS:
+• Price: Rs.595.70
+• Market Sentiment: Positive (0.344)
+• Sentiment Impact: Bullish momentum detected
+
+MODEL PERFORMANCE:
+• Standard Prophet MAPE: 4.05%
+• Sentiment-Enhanced MAPE: 16.29%
+• Accuracy Improvement: -12.24% ✗
+• Detected Pattern: N/A
+• Pattern Confidence: N/A
+• Pattern Breakout: Yes
+
+3-MONTH FORECAST (WITHOUT SENTIMENT):
+• Range: Rs.226.43 - Rs.777.29
+• Median: Rs.501.24
+• Change: -15.86%
+
+3-MONTH FORECAST (WITH SENTIMENT):
+• Range: Rs.168.16 - Rs.481.63
+• Median: Rs.325.78
+• Change: -45.31%
+• Sentiment Adjustment: -35.01%
+• Adjusted Median (support-aware): Rs.300.48 (fell to next support)
+
+TECHNICAL INDICATORS:
+• RSI (14): 53.28 (Neutral)
+• MACD: Bullish
+• Bollinger Bands: Within Bands (Normal Range)
+• VWAP: Rs.592.89 (Price is above)
+
+TRADING SIGNALS:
+• RSI Signal: HOLD
+• MACD Signal: BUY
+• Sentiment Signal: BULLISH
+• Combined Outlook: SELL
+
+RECOMMENDATION:
+The sentiment-enhanced model suggests downward movement. Current market sentiment is positive, which is contradicting the price forecast.

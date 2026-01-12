@@ -1,0 +1,20 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+  "python.analysis.indexing": true,
+  "python.analysis.packageIndexDepths": {
+    "scikit-learn": 3
+  }
+}
+{
+    "python.analysis.extraPaths": [
+        "./.venv/Lib/site-packages",
+        "./.venv/Lib/site-packages/sklearn",
+        "./.venv/Lib/site-packages/tensorflow"
+    ],
+    "python.analysis.packageIndexDepths": [
+        {
+            "package": "tensorflow",
+            "depth": 3
+        }
+    ]
+}

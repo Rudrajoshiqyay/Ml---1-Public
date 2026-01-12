@@ -405,9 +405,96 @@
                         <div class="alert alert-{{ 'error' if category == 'error' else 'success' }}">
                             {{ message }}
                         </div>
+
+                        {# MAPE download removed per request. #}
                     {% endfor %}
                 {% endif %}
             {% endwith %}
+
+            {% if gaff %}
+                <div class="metric-card">
+                    <h4>🧭 GAFF Pattern Data</h4>
+                    {% if gaff.error %}
+                        <div class="metric-item">
+                            <span class="metric-label">GAFF Status:</span>
+                            <span class="metric-value">Error: {{ gaff.error }}</span>
+                        </div>
+                    {% endif %}
+
+                    {% if gaff_summary %}
+                        <div class="metric-item">
+                            <span class="metric-label">Total Patterns:</span>
+                            <span class="metric-value">{{ gaff_summary.total }}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Top Pattern:</span>
+                            <span class="metric-value">{{ gaff_summary.top_pattern }} ({{ gaff_summary.top_count }})</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Avg Confidence:</span>
+                            <span class="metric-value">{% if gaff_summary.avg_confidence is not none %}{{ '%.2f'|format(gaff_summary.avg_confidence) }}%{% else %}N/A{% endif %}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Breakouts:</span>
+                            <span class="metric-value">{{ gaff_summary.breakouts }}</span>
+                        </div>
+                        <div style="margin-top:10px; padding-top:10px; border-top:1px dashed #eee;">
+                            <h5 style="margin:0 0 8px 0; color:#333;">Detected Patterns</h5>
+                            {% set patterns_list = gaff.patterns if gaff.patterns is defined else gaff.get('patterns', []) %}
+                            {% if patterns_list and patterns_list | length > 0 %}
+                                <ul style="max-height:220px; overflow:auto; padding-left:18px;">
+                                    {% for p in patterns_list %}
+                                        <li style="margin-bottom:6px;">
+                                            <strong>{{ p.get('pattern', p.get('name', 'unknown')) }}</strong>
+                                            — confidence: {% if p.get('confidence') is not none %}{{ '%.2f'|format(p.get('confidence') * 100 if p.get('confidence') <= 1 else p.get('confidence')) }}%{% else %}N/A{% endif %}
+                                            (start: {{ p.get('start_idx', '-') }}, end: {{ p.get('end_idx', '-') }})
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <div class="metric-item">
+                                    <span class="metric-label">Patterns:</span>
+                                    <span class="metric-value">None detected</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                        {% if gaff_summary and gaff_summary.suggested %}
+                            <div style="margin-top:10px; padding-top:10px; border-top:1px dashed #eee;">
+                                <h5 style="margin:0 0 8px 0; color:#333;">Suggested Levels (GAFF)</h5>
+                                <div class="metric-item">
+                                    <span class="metric-label">Current Price:</span>
+                                    <span class="metric-value">{{ gaff_summary.suggested.current_price if gaff_summary.suggested.current_price is defined else 'N/A' }}</span>
+                                </div>
+                                <div class="metric-item">
+                                    <span class="metric-label">Support:</span>
+                                    <span class="metric-value">{{ gaff_summary.suggested.support if gaff_summary.suggested.support is defined else 'N/A' }}</span>
+                                </div>
+                                <div class="metric-item">
+                                    <span class="metric-label">Resistance:</span>
+                                    <span class="metric-value">{{ gaff_summary.suggested.resistance if gaff_summary.suggested.resistance is defined else 'N/A' }}</span>
+                                </div>
+                                <div class="metric-item">
+                                    <span class="metric-label">Suggested Buy:</span>
+                                    <span class="metric-value">{{ gaff_summary.suggested.buy if gaff_summary.suggested.buy is defined else 'N/A' }}</span>
+                                </div>
+                                <div class="metric-item">
+                                    <span class="metric-label">Suggested Stop Loss:</span>
+                                    <span class="metric-value">{{ gaff_summary.suggested.stop_loss if gaff_summary.suggested.stop_loss is defined else 'N/A' }}</span>
+                                </div>
+                                <div class="metric-item">
+                                    <span class="metric-label">Note:</span>
+                                    <span class="metric-value">{{ gaff_summary.suggested.note if gaff_summary.suggested.note is defined else '' }}</span>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="metric-item">
+                            <span class="metric-label">Patterns:</span>
+                            <span class="metric-value">None detected</span>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
             
             <!-- Stock Input Form -->
             <div class="form-section">
@@ -424,15 +511,7 @@
                     </div>
                 </form>
                 
-                <!-- Action Buttons -->
-                <div class="button-group">
-                    <button type="button" class="btn btn-success" onclick="checkHealth()">
-                        🩺 Health Check
-                    </button>
-                    <a href="/health" target="_blank" class="btn btn-secondary">
-                        📊 API Health Status
-                    </a>
-                </div>
+                <!-- Action Buttons removed (health buttons not needed) -->
                 
                 <small style="color: #666; margin-top: 10px; display: block;">
                     💡 Use NSE format (e.g., RELIANCE.NS) for Indian stocks or standard symbols for international stocks
@@ -501,6 +580,14 @@
                                 <span class="metric-label">Low:</span>
                                 <span class="metric-value" style="color: #dc3545;">{{ forecast.low }}</span>
                             </div>
+                            <div class="metric-item">
+                                <span class="metric-label">Adjusted Median:</span>
+                                <span class="metric-value">{{ forecast_with_sentiment.get('adjusted_median', 'N/A') }}</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">Fell to Next Support:</span>
+                                <span class="metric-value">{% if forecast_with_sentiment.get('fell_to_next_support') is not none %}{{ 'Yes' if forecast_with_sentiment.get('fell_to_next_support') else 'No' }}{% else %}N/A{% endif %}</span>
+                            </div>
                         </div>
                         
                         <!-- Technical Indicators -->
@@ -525,6 +612,64 @@
                                 <span class="metric-value">{{ indicators.vwap }} ({{ indicators.vwap_status }})</span>
                             </div>
                         </div>
+
+                        <!-- Pattern Recognition (Gaff) -->
+                        <div class="metric-card">
+                            <h4>🔍 Pattern Recognition</h4>
+                            <div class="metric-item">
+                                <span class="metric-label">Pattern:</span>
+                                <span class="metric-value">{{ patterns.get('name', 'N/A') }}</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">Confidence:</span>
+                                <span class="metric-value">{% if patterns.get('confidence') is not none %}{{ '%.2f'|format(patterns.get('confidence') * 100 if patterns.get('confidence') <= 1 else patterns.get('confidence')) }}{% else %}N/A{% endif %}</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">Breakout:</span>
+                                <span class="metric-value">{% if patterns.get('breakout') is not none %}{{ 'Yes' if patterns.get('breakout') else 'No' }}{% else %}N/A{% endif %}</span>
+                            </div>
+                        </div>
+
+                        <!-- Model Performance (MAPE) -->
+                        <div class="metric-card">
+                            <h4>📈 Model Performance</h4>
+                            <div class="metric-item">
+                                <span class="metric-label">Prophet MAPE (no sentiment):</span>
+                                <span class="metric-value">{{ model_performance.get('mape_no_sentiment', 'N/A') }}</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">Prophet MAPE (with sentiment):</span>
+                                <span class="metric-value">{{ model_performance.get('mape_with_sentiment', 'N/A') }}</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">Improvement:</span>
+                                <span class="metric-value">{{ model_performance.get('improvement', 'N/A') }}</span>
+                            </div>
+                        </div>
+
+                        <!-- LSTM Predictor -->
+                        <div class="metric-card">
+                            <h4>🤖 LSTM Predictor</h4>
+                            {% if lstm and lstm.predicted_price is defined %}
+                                <div class="metric-item">
+                                    <span class="metric-label">Predicted Price:</span>
+                                    <span class="metric-value">Rs.{{ '%.2f'|format(lstm.predicted_price) }}</span>
+                                </div>
+                                <div class="metric-item">
+                                    <span class="metric-label">Predicted Change:</span>
+                                    <span class="metric-value">{{ '%.2f'|format(lstm.predicted_change_pct) }}%</span>
+                                </div>
+                                <div class="metric-item">
+                                    <span class="metric-label">Train MAPE:</span>
+                                    <span class="metric-value">{% if lstm.train_mape is not none %}{{ '%.2f'|format(lstm.train_mape) }}%{% else %}N/A{% endif %}</span>
+                                </div>
+                            {% else %}
+                                <div class="metric-item">
+                                    <span class="metric-label">LSTM:</span>
+                                    <span class="metric-value">Not available</span>
+                                </div>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             {% endif %}
@@ -532,25 +677,6 @@
         
         <div class="footer">
             <p>⚠️ <strong>Disclaimer:</strong> This analysis is for educational purposes only. Always consult with a financial advisor before making investment decisions.</p>
-        </div>
-    </div>
-    
-    <!-- Health Check Modal -->
-    <div id="healthModal" class="health-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>🩺 System Health Check</h3>
-                <button class="close-btn" onclick="closeHealthModal()">&times;</button>
-            </div>
-            <div id="healthStatus" class="health-status">
-                Checking system status...
-            </div>
-            <div id="healthMessage" style="text-align: center; color: #666;">
-                Please wait while we check the application health...
-            </div>
-            <div style="text-align: center; margin-top: 20px;">
-                <button class="btn" onclick="closeHealthModal()">Close</button>
-            </div>
         </div>
     </div>
     
@@ -562,59 +688,6 @@
         // Hide loading on page load
         window.addEventListener('load', function() {
             document.getElementById('loading').classList.remove('show');
-        });
-        
-        // Health Check Functions
-        async function checkHealth() {
-            const modal = document.getElementById('healthModal');
-            const statusDiv = document.getElementById('healthStatus');
-            const messageDiv = document.getElementById('healthMessage');
-            
-            // Show modal
-            modal.classList.add('show');
-            
-            // Reset status
-            statusDiv.textContent = 'Checking system status...';
-            statusDiv.className = 'health-status';
-            messageDiv.textContent = 'Please wait while we check the application health...';
-            
-            try {
-                const response = await fetch('/health');
-                const data = await response.json();
-                
-                if (response.ok && data.status === 'healthy') {
-                    statusDiv.textContent = '✅ System is Healthy';
-                    statusDiv.className = 'health-status healthy';
-                    messageDiv.textContent = data.message || 'All systems are functioning normally.';
-                } else {
-                    statusDiv.textContent = '❌ System Issues Detected';
-                    statusDiv.className = 'health-status unhealthy';
-                    messageDiv.textContent = data.message || 'There might be some issues with the system.';
-                }
-            } catch (error) {
-                statusDiv.textContent = '❌ Connection Failed';
-                statusDiv.className = 'health-status unhealthy';
-                messageDiv.textContent = 'Unable to connect to the server. Please check your connection.';
-                console.error('Health check failed:', error);
-            }
-        }
-        
-        function closeHealthModal() {
-            document.getElementById('healthModal').classList.remove('show');
-        }
-        
-        // Close modal when clicking outside
-        document.getElementById('healthModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeHealthModal();
-            }
-        });
-        
-        // Close modal with Escape key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeHealthModal();
-            }
         });
     </script>
 </body>
