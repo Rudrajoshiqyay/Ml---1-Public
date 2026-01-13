@@ -2,6 +2,9 @@
 import matplotlib
 matplotlib.use('Agg')  # Non-interactive backend for web servers
 
+
+import base64
+from io import BytesIO
 # Import libraries
 import yfinance as yf
 import pandas as pd
@@ -454,7 +457,9 @@ def analyze_stock_with_sentiment(ticker="PGEL.NS"):
             if mape_df is not None and not mape_df.empty:
                 mape_csv_name = f"{ticker}_mape_comparison.csv"
                 mape_csv_path = os.path.join(output_static_dir, mape_csv_name)
-                mape_df.to_csv(mape_csv_path, index=False)
+                
+                csv_data = mape_df.to_csv(index=False)
+
                 # Provide a small sample for quick inspection
                 mape_sample = mape_df.head(20).to_dict(orient='records')
                 print(f"Saved MAPE comparison data to: {mape_csv_path}")
@@ -566,7 +571,16 @@ def analyze_stock_with_sentiment(ticker="PGEL.NS"):
         if os.path.exists(full_plot_path):
             os.remove(full_plot_path)
             
-        plt.savefig(full_plot_path, dpi=300, bbox_inches='tight')
+
+
+
+
+        buf = BytesIO()
+        plt.savefig(buf, format="png", dpi=300, bbox_inches='tight')
+        buf.seek(0)
+        plot_base64 = base64.b64encode(buf.read()).decode("utf-8")
+
+        
         plt.close('all')
         print(f"Plot saved to: {full_plot_path}")
 
@@ -811,7 +825,7 @@ RECOMMENDATION:
             'success': True,
             'ticker': ticker,
             'summary': analysis_summary,
-            'image_filename': plot_filename,
+            'plot_base64': plot_base64,
             'current_price': f"Rs.{latest_close:.2f}",
             'sentiment': {
                 'score': f"{latest_sentiment:.3f}",

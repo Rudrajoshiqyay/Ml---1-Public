@@ -545,14 +545,18 @@
                     </div>
                     
                     <!-- Charts -->
-                    {% if image_filename %}
-                        <div class="analysis-image">
-                            <h3 style="margin-bottom: 20px; color: #333;">📈 Technical Analysis Charts</h3>
-                            <img src="{{ url_for('static', filename=image_filename) }}" 
-                                 alt="{{ ticker }} Technical Analysis Charts"
-                                 loading="lazy">
-                        </div>
-                    {% endif %}
+
+                    {% if plot_base64 %}
+    <div class="analysis-image">
+        <h3 style="margin-bottom: 20px; color: #333;">📈 Technical Analysis Charts</h3>
+        <img 
+            src="data:image/png;base64,{{ plot_base64 }}" 
+            alt="{{ ticker }} Technical Analysis Charts"
+            loading="lazy"
+        >
+    </div>
+{% endif %}
+
                     
                     <!-- Detailed Metrics -->
                     <div class="metrics-grid">

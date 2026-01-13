@@ -1,36 +1,36 @@
-PGEL.NS Advanced Analysis with Sentiment - 2026-01-12
+PGEL.NS Advanced Analysis with Sentiment - 2026-01-13
 ========================================================
 
 CURRENT STATUS:
-• Price: Rs.595.70
-• Market Sentiment: Positive (0.344)
+• Price: Rs.591.70
+• Market Sentiment: Positive (0.158)
 • Sentiment Impact: Bullish momentum detected
 
 MODEL PERFORMANCE:
-• Standard Prophet MAPE: 4.05%
-• Sentiment-Enhanced MAPE: 16.29%
-• Accuracy Improvement: -12.24% ✗
+• Standard Prophet MAPE: 3.95%
+• Sentiment-Enhanced MAPE: 17.45%
+• Accuracy Improvement: -13.50% ✗
 • Detected Pattern: N/A
 • Pattern Confidence: N/A
 • Pattern Breakout: Yes
 
 3-MONTH FORECAST (WITHOUT SENTIMENT):
-• Range: Rs.226.43 - Rs.777.29
-• Median: Rs.501.24
-• Change: -15.86%
+• Range: Rs.323.17 - Rs.977.80
+• Median: Rs.659.56
+• Change: +11.47%
 
 3-MONTH FORECAST (WITH SENTIMENT):
-• Range: Rs.168.16 - Rs.481.63
-• Median: Rs.325.78
-• Change: -45.31%
-• Sentiment Adjustment: -35.01%
+• Range: Rs.135.85 - Rs.494.11
+• Median: Rs.307.64
+• Change: -48.01%
+• Sentiment Adjustment: -53.36%
 • Adjusted Median (support-aware): Rs.300.48 (fell to next support)
 
 TECHNICAL INDICATORS:
-• RSI (14): 53.28 (Neutral)
+• RSI (14): 51.66 (Neutral)
 • MACD: Bullish
 • Bollinger Bands: Within Bands (Normal Range)
-• VWAP: Rs.592.89 (Price is above)
+• VWAP: Rs.595.87 (Price is below)
 
 TRADING SIGNALS:
 • RSI Signal: HOLD

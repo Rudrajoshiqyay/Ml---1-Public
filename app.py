@@ -149,7 +149,7 @@ def index():
         return render_template('index.html',
                      ticker=analysis_result['ticker'],
                      summary=analysis_result['summary'],
-                     image_filename=analysis_result['image_filename'],
+                     plot_base64=analysis_result.get('plot_base64'),
                      current_price=analysis_result['current_price'],
                      forecast=analysis_result.get('forecast', {}),
                      forecast_with_sentiment=analysis_result.get('forecast_with_sentiment', {}),
