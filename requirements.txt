@@ -1,0 +1,13 @@
+flask
+gunicorn
+yfinance
+pandas
+matplotlib
+prophet
+cmdstanpy
+ta
+scikit-learn
+numpy
+textblob
+plotly
+tensorflow-cpu
