@@ -1,0 +1,42 @@
+TORNTPHARM.NS Advanced Analysis with Sentiment - 2026-02-19
+========================================================
+
+CURRENT STATUS:
+• Price: Rs.4226.40
+• Market Sentiment: Positive (0.269)
+• Sentiment Impact: Bullish momentum detected
+
+MODEL PERFORMANCE:
+• Standard Prophet MAPE: 1.20%
+• Sentiment-Enhanced MAPE: 14.82%
+• Accuracy Improvement: -13.63% ✗
+• Detected Pattern: inverted_w
+• Pattern Confidence: 97.36%
+• Pattern Breakout: Yes
+
+3-MONTH FORECAST (WITHOUT SENTIMENT):
+• Range: Rs.3728.15 - Rs.5033.31
+• Median: Rs.4365.31
+• Change: +3.29%
+
+3-MONTH FORECAST (WITH SENTIMENT):
+• Range: Rs.3423.76 - Rs.4388.75
+• Median: Rs.3888.80
+• Change: -7.99%
+• Sentiment Adjustment: -10.92%
+• Adjusted Median (support-aware): Rs.3843.45 (fell to next support)
+
+TECHNICAL INDICATORS:
+• RSI (14): 68.66 (Neutral)
+• MACD: Bullish
+• Bollinger Bands: Within Bands (Normal Range)
+• VWAP: Rs.4053.51 (Price is above)
+
+TRADING SIGNALS:
+• RSI Signal: HOLD
+• MACD Signal: BUY
+• Sentiment Signal: BULLISH
+• Combined Outlook: SELL
+
+RECOMMENDATION:
+The sentiment-enhanced model suggests downward movement. Current market sentiment is positive, which is contradicting the price forecast.

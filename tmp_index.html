@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Technical Analysis with Prophet</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .form-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border-left: 4px solid #4facfe;
+        }
+        
+        .form-group {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .form-group label {
+            font-weight: 600;
+            color: #333;
+            min-width: 120px;
+        }
+        
+        .form-group input {
+            flex: 1;
+            min-width: 200px;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(79, 172, 254, 0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+        }
+        
+        .btn-secondary:hover {
+            box-shadow: 0 10px 20px rgba(108, 117, 125, 0.3);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+        
+        .btn-success:hover {
+            box-shadow: 0 10px 20px rgba(40, 167, 69, 0.3);
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .analysis-section {
+            margin-top: 30px;
+        }
+        
+        .section-title {
+            font-size: 1.8em;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #4facfe;
+            display: inline-block;
+        }
+        
+        .summary-box {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .summary-box pre {
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #333;
+            margin: 0;
+        }
+        
+        .analysis-image {
+            text-align: center;
+            margin: 30px 0;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .analysis-image img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .metric-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .metric-card h4 {
+            color: #4facfe;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #f8f9fa;
+        }
+        
+        .metric-item:last-child {
+            border-bottom: none;
+        }
+        
+        .metric-label {
+            font-weight: 600;
+            color: #666;
+        }
+        
+        .metric-value {
+            font-weight: 700;
+            color: #333;
+        }
+        
+        .metric-value.macd-bullish {
+            color: #28a745;
+        }
+        
+        .metric-value.macd-bearish {
+            color: #dc3545;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4facfe;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .health-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .health-modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-header h3 {
+            color: #333;
+            margin: 0;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+        
+        .health-status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .health-status.healthy {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .health-status.unhealthy {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .form-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .form-group label {
+                min-width: auto;
+                margin-bottom: 5px;
+            }
+            
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .button-group .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📈 Stock Technical Analysis</h1>
+            <p>Advanced Prophet forecasting with technical indicators</p>
+        </div>
+        
+        <div class="content">
+            <!-- Flash Messages -->
+            
+                
+            
+
+            
+            <!-- Recommender Results -->
+            
+                <div class="summary-box">
+                    <h3 style="margin-bottom:12px; color:#4facfe;">🔎 Sector Recommender Results</h3>
+                    
+                        
+                            <div style="margin-bottom:12px;">
+                                <h4 style="margin:6px 0;">Pharma</h4>
+                                
+                                    <div class="metric-item">
+                                        <span class="metric-label">Analyzed:</span>
+                                        <span class="metric-value">10</span>
+                                    </div>
+                                    <div style="margin-top:6px;">
+                                        <strong>Most Cointegrated:</strong>
+                                        <ul>
+                                            
+                                                <li>DIVISLAB.NS — p=0.1063, dtw=70.4697</li>
+                                            
+                                                <li>TORNTPHARM.NS — p=0.1247, dtw=105.3909</li>
+                                            
+                                                <li>LUPIN.NS — p=0.1344, dtw=85.3095</li>
+                                            
+                                        </ul>
+                                    </div>
+                                    <div style="margin-top:6px;">
+                                        <strong>Least Cointegrated:</strong>
+                                        <ul>
+                                            
+                                                <li>AUROPHARMA.NS — p=0.6565, dtw=237.5285</li>
+                                            
+                                                <li>DRREDDY.NS — p=0.6226, dtw=289.6793</li>
+                                            
+                                                <li>CIPLA.NS — p=0.5064, dtw=234.9671</li>
+                                            
+                                        </ul>
+                                    </div>
+                                
+                            </div>
+                        
+                            <div style="margin-bottom:12px;">
+                                <h4 style="margin:6px 0;">IT</h4>
+                                
+                                    <div class="metric-item">
+                                        <span class="metric-label">Analyzed:</span>
+                                        <span class="metric-value">8</span>
+                                    </div>
+                                    <div style="margin-top:6px;">
+                                        <strong>Most Cointegrated:</strong>
+                                        <ul>
+                                            
+                                                <li>HCLTECH.NS — p=0.0679, dtw=74.8836</li>
+                                            
+                                                <li>TECHM.NS — p=0.0877, dtw=86.4739</li>
+                                            
+                                                <li>PERSISTENT.NS — p=0.1231, dtw=88.2643</li>
+                                            
+                                        </ul>
+                                    </div>
+                                    <div style="margin-top:6px;">
+                                        <strong>Least Cointegrated:</strong>
+                                        <ul>
+                                            
+                                                <li>TCS.NS — p=0.7493, dtw=347.6610</li>
+                                            
+                                                <li>COFORGE.NS — p=0.2857, dtw=102.1792</li>
+                                            
+                                                <li>WIPRO.NS — p=0.2397, dtw=103.0335</li>
+                                            
+                                        </ul>
+                                    </div>
+                                
+                            </div>
+                        
+                            <div style="margin-bottom:12px;">
+                                <h4 style="margin:6px 0;">Energy</h4>
+                                
+                                    <div class="metric-item">
+                                        <span class="metric-label">Analyzed:</span>
+                                        <span class="metric-value">10</span>
+                                    </div>
+                                    <div style="margin-top:6px;">
+                                        <strong>Most Cointegrated:</strong>
+                                        <ul>
+                                            
+                                                <li>IOC.NS — p=0.1187, dtw=109.3267</li>
+                                            
+                                                <li>RELIANCE.NS — p=0.1634, dtw=119.3680</li>
+                                            
+                                                <li>BPCL.NS — p=0.2272, dtw=125.1041</li>
+                                            
+                                        </ul>
+                                    </div>
+                                    <div style="margin-top:6px;">
+                                        <strong>Least Cointegrated:</strong>
+                                        <ul>
+                                            
+                                                <li>PETRONET.NS — p=0.6785, dtw=196.4891</li>
+                                            
+                                                <li>HINDPETRO.NS — p=0.4368, dtw=137.5861</li>
+                                            
+                                                <li>TATAPOWER.NS — p=0.4156, dtw=198.8490</li>
+                                            
+                                        </ul>
+                                    </div>
+                                
+                            </div>
+                        
+                    
+                </div>
+
+            
+
+            <!-- Stock Input Form -->
+            <div class="form-section">
+                <form method="POST" onsubmit="showLoading()">
+                    <div class="form-group">
+                        <label for="ticker">Stock Ticker:</label>
+                        <input type="text" 
+                               id="ticker" 
+                               name="ticker" 
+                               value="PGEL.NS" 
+                               placeholder="e.g., PGEL.NS, RELIANCE.NS, TCS.NS"
+                               required>
+                        <button type="submit" class="btn">🔍 Analyze Stock</button>
+                    </div>
+                </form>
+                
+                <!-- Action Buttons removed (health buttons not needed) -->
+                
+                <small style="color: #666; margin-top: 10px; display: block;">
+                    💡 Use NSE format (e.g., RELIANCE.NS) for Indian stocks or standard symbols for international stocks
+                </small>
+            </div>
+            
+            <!-- Loading Animation -->
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>Analyzing stock data and generating forecasts... This may take a moment.</p>
+            </div>
+            
+            <!-- Error Display -->
+            
+            
+            <!-- Analysis Results -->
+            
+        </div>
+        
+        <div class="footer">
+            <p>⚠️ <strong>Disclaimer:</strong> This analysis is for educational purposes only. Always consult with a financial advisor before making investment decisions.</p>
+        </div>
+    </div>
+    
+    <script>
+        function showLoading() {
+            document.getElementById('loading').classList.add('show');
+        }
+        
+        // Hide loading on page load
+        window.addEventListener('load', function() {
+            document.getElementById('loading').classList.remove('show');
+        });
+    </script>
+</body>
+</html>

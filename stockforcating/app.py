@@ -9,6 +9,12 @@ except Exception:
     def detect_gaff(*args, **kwargs):
         return {'patterns': [], 'forecast': None, 'error': 'GAFF module unavailable'}
 
+try:
+    from stock_recommender import run_recommender
+except Exception:
+    def run_recommender(*args, **kwargs):
+        return {'error': 'Recommender unavailable'}
+
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-here'  # Required for flash messages
 
@@ -19,8 +25,12 @@ os.makedirs('templates', exist_ok=True)
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'GET':
-        # Show the form with default ticker
-        return render_template('index.html', ticker="PGEL.NS")
+        # Show the form with default ticker and recommender summary
+        try:
+            rec = run_recommender()
+        except Exception:
+            rec = {'error': 'failed to run recommender'}
+        return render_template('index.html', ticker="PGEL.NS", recommender=rec)
     
     elif request.method == 'POST':
         # Get ticker from form
@@ -165,7 +175,12 @@ def index():
 @app.route('/index')
 def index_check():
 
-    return {}
+    # Provide quick access to recommender via a simple GET
+    try:
+        rec = run_recommender()
+    except Exception:
+        rec = {'error': 'failed to run recommender'}
+    return render_template('index.html', ticker="PGEL.NS", recommender=rec)
 
 @app.errorhandler(404)
 def not_found_error(error):
@@ -181,4 +196,5 @@ if __name__ == '__main__':
     print("Make sure you have the following dependencies installed:")
     print("pip install flask yfinance pandas matplotlib prophet ta")
     print("\nAccess the app at: http://127.0.0.1:5000")
-    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
+    app.run(host="0.0.0.0", port=7860)
+

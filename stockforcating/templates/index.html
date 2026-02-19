@@ -495,7 +495,50 @@
                     {% endif %}
                 </div>
             {% endif %}
-            
+            <!-- Recommender Results -->
+            {% if recommender %}
+                <div class="summary-box">
+                    <h3 style="margin-bottom:12px; color:#4facfe;">🔎 Sector Recommender Results</h3>
+                    {% if recommender.error %}
+                        <div class="alert alert-error">Recommender error: {{ recommender.error }}</div>
+                    {% else %}
+                        {% for sector, data in recommender.items() %}
+                            <div style="margin-bottom:12px;">
+                                <h4 style="margin:6px 0;">{{ sector }}</h4>
+                                {% if data.error %}
+                                    <div class="metric-item">
+                                        <span class="metric-label">Status:</span>
+                                        <span class="metric-value">{{ data.error }}</span>
+                                    </div>
+                                {% else %}
+                                    <div class="metric-item">
+                                        <span class="metric-label">Analyzed:</span>
+                                        <span class="metric-value">{{ data.summary.count_analyzed }}</span>
+                                    </div>
+                                    <div style="margin-top:6px;">
+                                        <strong>Most Cointegrated:</strong>
+                                        <ul>
+                                            {% for r in data.rank_by_cointegration.most_cointegrated %}
+                                                <li>{{ r.ticker }} — p={{ '%.4f'|format(r.pvalue) }}, dtw={{ '%.4f'|format(r.dtw) }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                    <div style="margin-top:6px;">
+                                        <strong>Least Cointegrated:</strong>
+                                        <ul>
+                                            {% for r in data.rank_by_cointegration.least_cointegrated %}
+                                                <li>{{ r.ticker }} — p={{ '%.4f'|format(r.pvalue) }}, dtw={{ '%.4f'|format(r.dtw) }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+            {% endif %}
+
             <!-- Stock Input Form -->
             <div class="form-section">
                 <form method="POST" onsubmit="showLoading()">

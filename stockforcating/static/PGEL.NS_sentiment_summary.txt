@@ -10,17 +10,17 @@ MODEL PERFORMANCE:
 • Standard Prophet MAPE: 3.95%
 • Sentiment-Enhanced MAPE: 17.45%
 • Accuracy Improvement: -13.50% ✗
-• Detected Pattern: N/A
-• Pattern Confidence: N/A
+• Detected Pattern: inverted_w
+• Pattern Confidence: 98.67%
 • Pattern Breakout: Yes
 
 3-MONTH FORECAST (WITHOUT SENTIMENT):
-• Range: Rs.323.17 - Rs.977.80
+• Range: Rs.338.88 - Rs.1018.98
 • Median: Rs.659.56
 • Change: +11.47%
 
 3-MONTH FORECAST (WITH SENTIMENT):
-• Range: Rs.135.85 - Rs.494.11
+• Range: Rs.129.04 - Rs.474.77
 • Median: Rs.307.64
 • Change: -48.01%
 • Sentiment Adjustment: -53.36%
