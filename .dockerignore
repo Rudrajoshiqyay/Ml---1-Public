@@ -1,0 +1,52 @@
+# Python
+__pycache__
+*.py[cod]
+*.egg-info
+.Python
+venv/
+env/
+.venv
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+*.md
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache
+.coverage
+htmlcov
+
+# Runtime
+*.png
+*.jpg
+*.csv
+*.txt
+static/
+dir/
+tmp/
+
+# GPU/CUDA
+*.cuda
+*.cudnn
+CUDA/
+
+# Large files
+*.tar.gz
+*.zip
+*.rar

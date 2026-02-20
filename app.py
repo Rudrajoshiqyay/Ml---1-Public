@@ -3,6 +3,7 @@ from prophet_v2 import analyze_stock
 from lstm_predictor import predict_lstm_change
 from collections import Counter
 import os
+
 try:
     from gaff_pattern_reconiton import detect as detect_gaff
 except Exception:
@@ -10,11 +11,7 @@ except Exception:
         return {'patterns': [], 'forecast': None, 'error': 'GAFF module unavailable'}
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-here'  # Required for flash messages
-
-# Ensure static directory exists
-os.makedirs('static', exist_ok=True)
-os.makedirs('templates', exist_ok=True)
+app.secret_key = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -177,9 +174,14 @@ def internal_error(error):
     return render_template('index.html', ticker="PGEL.NS"), 500
 
 if __name__ == '__main__':
-    print("Starting Stock Analysis App...")
-    print("Make sure you have the following dependencies installed:")
-    print("pip install flask yfinance pandas matplotlib prophet ta")
-    print("\nAccess the app at: http://127.0.0.1:5000")
-    app.run(host="0.0.0.0", port=7860)
+    # Read port from environment variable (Hugging Face Spaces uses PORT=7860 by default)
+    port = int(os.getenv('PORT', 7860))
+    host = '0.0.0.0'  # Listen on all interfaces for containerized deployment
+    
+    print("🚀 Starting Stock Analysis App...")
+    print(f"📡 Listening on {host}:{port}")
+    print("🔗 Ensure templates/ and static/ folders exist in deployment")
+    
+    # Disable Flask dev server warnings in production
+    app.run(host=host, port=port, threaded=True, debug=False)
 

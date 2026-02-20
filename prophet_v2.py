@@ -87,20 +87,9 @@ if not _HAS_GAFF:
 plt.ioff()
 
 def clean_static_dir_folder():
-    """Clean old files from static_dir folder to prevent accumulation"""
-    try:
-        static_dir = 'static'
-        if os.path.exists(static_dir):
-            for filename in os.listdir(static_dir):
-                if filename.endswith(('.png', '.txt')):
-                    file_path = os.path.join(static_dir, filename)
-                    try:
-                        os.remove(file_path)
-                        print(f"Removed old file: {file_path}")
-                    except Exception as e:
-                        print(f"Could not remove {file_path}: {e}")
-    except Exception as e:
-        print(f"Error cleaning static_dir folder: {e}")
+    """Deprecated: No longer used in stateless HF Spaces mode
+    Keeping as stub for backward compatibility"""
+    pass  # Stateless - no disk operations
 
 def safe_extract_value(series_value):
     """Safely extract scalar value from pandas Series or scalar"""
@@ -176,11 +165,8 @@ def generate_sentiment_scores(data):
 
 def analyze_stock_with_sentiment(ticker="PGEL.NS"):
     try:
-        clean_static_dir_folder()
+        # Stateless mode: no directory creation or cleanup needed
         
-        output_static_dir = 'static'
-        os.makedirs(output_static_dir, exist_ok=True)
-
         # Download historical data
         print(f"Downloading data for {ticker}...")
         data = yf.download(ticker, period="3y", auto_adjust=True)
@@ -450,21 +436,19 @@ def analyze_stock_with_sentiment(ticker="PGEL.NS"):
             print(f"Preparing MAPE dataframe failed: {e}")
             mape_df = None
 
-        # Save MAPE comparison CSV for inspection
+        # Keep MAPE comparison data in memory only (no disk writes)
         mape_csv_name = None
         mape_sample = []
         try:
             if mape_df is not None and not mape_df.empty:
-                mape_csv_name = f"{ticker}_mape_comparison.csv"
-                mape_csv_path = os.path.join(output_static_dir, mape_csv_name)
-                
-                csv_data = mape_df.to_csv(index=False)
+                # Store the CSV content in memory only
+                csv_data = mape_df.to_csv(index=False)  # In memory only
 
                 # Provide a small sample for quick inspection
                 mape_sample = mape_df.head(20).to_dict(orient='records')
-                print(f"Saved MAPE comparison data to: {mape_csv_path}")
+                print(f"MAPE comparison data prepared in memory (no disk write)")
         except Exception as e:
-            print(f"Failed to save MAPE CSV: {e}")
+            print(f"Failed to prepare MAPE data: {e}")
 
         # Plotting
         print("Creating enhanced charts...")
@@ -565,24 +549,14 @@ def analyze_stock_with_sentiment(ticker="PGEL.NS"):
 
         plt.tight_layout()
 
-        plot_filename = f"{ticker}_sentiment_analysis.png"
-        full_plot_path = os.path.join(output_static_dir, plot_filename)
-        
-        if os.path.exists(full_plot_path):
-            os.remove(full_plot_path)
-            
-
-
-
-
+        # Generate base64-encoded image (no disk writes)
         buf = BytesIO()
         plt.savefig(buf, format="png", dpi=300, bbox_inches='tight')
         buf.seek(0)
         plot_base64 = base64.b64encode(buf.read()).decode("utf-8")
-
         
         plt.close('all')
-        print(f"Plot saved to: {full_plot_path}")
+        print("Plot generated in-memory as base64 (no disk write)")
 
         # Get latest values
         latest_close = safe_extract_value(data['Close'].iloc[-1])
@@ -811,15 +785,8 @@ RECOMMENDATION:
  "the price forecast."}
 """
 
-        text_filename = f"{ticker}_sentiment_summary.txt"
-        full_text_path = os.path.join(output_static_dir, text_filename)
-        
-        if os.path.exists(full_text_path):
-            os.remove(full_text_path)
-            
-        with open(full_text_path, 'w', encoding='utf-8') as f:
-            f.write(analysis_summary)
-        print(f"Analysis summary saved to: {full_text_path}")
+        # Analysis summary kept in memory only (no disk write)
+        print("Analysis summary prepared in-memory (no disk write)")
 
         return {
             'success': True,
