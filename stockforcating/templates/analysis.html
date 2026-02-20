@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cointegration & DTW Stock Analysis</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1e3c72;
+            --secondary: #2a5298;
+            --success: #27ae60;
+            --danger: #e74c3c;
+            --warning: #f39c12;
+            --info: #3498db;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            min-height: 100vh;
+            padding: 20px 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .navbar-custom {
+            background: rgba(30, 60, 114, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+            color: #fff !important;
+        }
+        
+        .header-section {
+            text-align: center;
+            color: white;
+            margin: 40px 0;
+            animation: fadeIn 0.8s ease-in;
+        }
+        
+        .header-section h1 {
+            font-size: 2.8rem;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            margin-bottom: 15px;
+        }
+        
+        .sector-container {
+            margin: 30px 0;
+        }
+        
+        .sector-card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            background: white;
+            margin-bottom: 30px;
+        }
+        
+        .sector-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .sector-card.pharma {
+            border-top: 5px solid #e74c3c;
+            background: linear-gradient(to right, rgba(231, 76, 60, 0.05), white);
+        }
+        
+        .sector-card.it {
+            border-top: 5px solid #3498db;
+            background: linear-gradient(to right, rgba(52, 152, 219, 0.05), white);
+        }
+        
+        .sector-card.energy {
+            border-top: 5px solid #f39c12;
+            background: linear-gradient(to right, rgba(243, 156, 18, 0.05), white);
+        }
+        
+        .sector-header {
+            padding: 20px;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .sector-card.pharma .sector-header {
+            background: #e74c3c;
+        }
+        
+        .sector-card.it .sector-header {
+            background: #3498db;
+        }
+        
+        .sector-card.energy .sector-header {
+            background: #f39c12;
+        }
+        
+        .sector-body {
+            padding: 25px;
+        }
+        
+        .pair-analysis {
+            border: 1px solid #ecf0f1;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+        
+        .pair-analysis:hover {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .pair-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .ticker-badge {
+            background: #34495e;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+        
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .analysis-card {
+            background: white;
+            border: 1px solid #ecf0f1;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        
+        .analysis-card h5 {
+            color: #2c3e50;
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+        
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        .metric-row:last-child {
+            border-bottom: none;
+        }
+        
+        .metric-label {
+            color: #7f8c8d;
+            font-weight: 500;
+        }
+        
+        .metric-value {
+            color: #2c3e50;
+            font-weight: bold;
+        }
+        
+        .badge-coint {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        
+        .badge-coint.yes {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .badge-coint.no {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .strength-excellent {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        
+        .strength-strong {
+            color: #3498db;
+            font-weight: bold;
+        }
+        
+        .strength-moderate {
+            color: #f39c12;
+            font-weight: bold;
+        }
+        
+        .strength-weak {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        
+        .similarity-very {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        
+        .similarity-similar {
+            color: #3498db;
+            font-weight: bold;
+        }
+        
+        .similarity-moderate {
+            color: #f39c12;
+            font-weight: bold;
+        }
+        
+        .similarity-dissimilar {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: white;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid white;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .footer {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.8);
+            padding: 30px 20px;
+            margin-top: 40px;
+            font-size: 0.95rem;
+        }
+        
+        .refresh-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+            padding: 8px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .refresh-btn:hover {
+            background: white;
+            color: var(--primary);
+        }
+        
+        .timestamp {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .analysis-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header-section h1 {
+                font-size: 2rem;
+            }
+            
+            .sector-header {
+                font-size: 1.4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <div class="container-lg">
+            <span class="navbar-brand">📊 Stock Analysis - Cointegration & DTW</span>
+            <button class="refresh-btn ms-auto" onclick="refreshAnalysis()">🔄 Refresh Analysis</button>
+        </div>
+    </nav>
+    
+    <!-- Header -->
+    <div class="container-lg">
+        <div class="header-section">
+            <h1>🚀 Stock Cointegration & DTW Analysis</h1>
+            <p style="font-size: 1.1rem; margin: 10px 0;">Analyzing relationships between stocks in Pharma, IT, and Energy sectors</p>
+            <div class="timestamp" id="timestamp">Last updated: Loading...</div>
+        </div>
+        
+        <!-- Results Container -->
+        <div id="results-container">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>📊 Analyzing stock relationships...</p>
+                <p style="font-size: 0.9rem;">This may take 30-60 seconds</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <div class="footer">
+        <p>💡 Powered by: Cointegration (Johansen Test) & Dynamic Time Warping</p>
+        <p style="margin-top: 10px;">HuggingFace Spaces Ready • Data from Yahoo Finance</p>
+    </div>
+    
+    <script>
+        async function loadAnalysis() {
+            try {
+                const response = await fetch('/api/analysis');
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    document.getElementById('timestamp').textContent = `Last updated: ${new Date(data.timestamp).toLocaleString()}`;
+                    renderAnalysis(data.data);
+                } else {
+                    showError('Failed to load analysis');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Error loading analysis: ' + error.message);
+            }
+        }
+        
+        function renderAnalysis(results) {
+            const container = document.getElementById('results-container');
+            const sectors = ['pharma', 'it', 'energy'];
+            const sectorLabels = { pharma: '💊 PHARMA', it: '💻 IT', energy: '⚡ ENERGY' };
+            
+            let html = '';
+            
+            for (const sector of sectors) {
+                if (!results[sector]) continue;
+                
+                html += `
+                    <div class="sector-card ${sector}">
+                        <div class="sector-header">
+                            ${sectorLabels[sector]}
+                        </div>
+                        <div class="sector-body">
+                            ${results[sector].map(pair => renderPairAnalysis(pair)).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        function renderPairAnalysis(pair) {
+            if (!pair || !pair.cointegration || !pair.dtw) {
+                return '<p class="text-danger">Error loading pair analysis</p>';
+            }
+            
+            const coint = pair.cointegration;
+            const dtw = pair.dtw;
+            
+            const cointStrengthClass = coint.strength === 'Very Strong' ? 'strength-excellent' :
+                                      coint.strength === 'Strong' ? 'strength-strong' :
+                                      coint.strength === 'Moderate' ? 'strength-moderate' :
+                                      'strength-weak';
+            
+            const similarityClass = dtw.similarity === 'Very Similar' ? 'similarity-very' :
+                                   dtw.similarity === 'Similar' ? 'similarity-similar' :
+                                   dtw.similarity === 'Moderately Similar' ? 'similarity-moderate' :
+                                   'similarity-dissimilar';
+            
+            return `
+                <div class="pair-analysis">
+                    <div class="pair-title">
+                        <span class="ticker-badge">${pair.ticker1}</span>
+                        <span style="color: #7f8c8d;">vs</span>
+                        <span class="ticker-badge">${pair.ticker2}</span>
+                    </div>
+                    
+                    <div class="analysis-grid">
+                        <div class="analysis-card">
+                            <h5>📊 Cointegration Analysis</h5>
+                            <div class="metric-row">
+                                <span class="metric-label">Score:</span>
+                                <span class="metric-value">${coint.cointegration_score.toFixed(4)}</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">P-Value:</span>
+                                <span class="metric-value">${coint.pvalue.toFixed(4)}</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">Strength:</span>
+                                <span class="metric-value ${cointStrengthClass}">${coint.strength}</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">Cointegrated:</span>
+                                <span class="badge-coint ${coint.cointegrated ? 'yes' : 'no'}">
+                                    ${coint.cointegrated ? '✅ YES' : '❌ NO'}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="analysis-card">
+                            <h5>📈 DTW Similarity Analysis</h5>
+                            <div class="metric-row">
+                                <span class="metric-label">DTW Distance:</span>
+                                <span class="metric-value">${dtw.dtw_distance.toFixed(4)}</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">Normalized:</span>
+                                <span class="metric-value">${dtw.normalized_dtw.toFixed(4)}</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">Similarity:</span>
+                                <span class="metric-value ${similarityClass}">${dtw.similarity}</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">Data Points:</span>
+                                <span class="metric-value">${dtw.length1} matched</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function showError(message) {
+            document.getElementById('results-container').innerHTML = `
+                <div class="alert alert-danger" role="alert">
+                    <h4 class="alert-heading">❌ Error</h4>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+        
+        async function refreshAnalysis() {
+            if (confirm('Refresh analysis? This may take 30-60 seconds.')) {
+                document.getElementById('results-container').innerHTML = `
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>🔄 Refreshing analysis...</p>
+                    </div>
+                `;
+                
+                try {
+                    const response = await fetch('/api/refresh', { method: 'POST' });
+                    const data = await response.json();
+                    
+                    if (data.status === 'success') {
+                        document.getElementById('timestamp').textContent = `Last updated: ${new Date(data.timestamp).toLocaleString()}`;
+                        renderAnalysis(data.data);
+                    } else {
+                        showError('Failed to refresh analysis');
+                    }
+                } catch (error) {
+                    showError('Error refreshing: ' + error.message);
+                }
+            }
+        }
+        
+        // Load analysis on page load
+        loadAnalysis();
+    </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,202 +1,163 @@
-from flask import Flask, render_template, request, flash
-from prophet_v2 import analyze_stock
-from lstm_predictor import predict_lstm_change
-from collections import Counter
+"""
+Flask Application for Stock Analysis
+HuggingFace-friendly web interface
+"""
+
 import os
+import sys
+from flask import Flask, render_template, jsonify, request
+from datetime import datetime
+import json
 
-try:
-    from gaff_pattern_reconiton import detect as detect_gaff
-except Exception:
-    def detect_gaff(*args, **kwargs):
-        return {'patterns': [], 'forecast': None, 'error': 'GAFF module unavailable'}
+# Add stockforcating to path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'stockforcating'))
 
-try:
-    from stock_recommender import run_recommender
-except Exception:
-    def run_recommender(*args, **kwargs):
-        return {'error': 'Recommender unavailable'}
+from cointegration_dtw import StockPairAnalyzer, analyze_stock_pairs
 
-app = Flask(__name__)
-app.secret_key = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
+app = Flask(__name__, template_folder='stockforcating/templates', static_folder='stockforcating/static')
+app.config['JSON_SORT_KEYS'] = False
 
-@app.route('/', methods=['GET', 'POST'])
-def index():
-    if request.method == 'GET':
-        # Show the form with default ticker and recommender summary
-        try:
-            rec = run_recommender()
-        except Exception:
-            rec = {'error': 'failed to run recommender'}
-        return render_template('index.html', ticker="PGEL.NS", recommender=rec)
+# Cache for analysis results
+analysis_cache = {
+    'data': None,
+    'timestamp': None
+}
+
+# Predefined stock pairs for 3 sectors
+STOCK_PAIRS = {
+    'energy': [
+        ('RELIANCE.NS', 'ONGC.NS'),
+        ('RELIANCE.NS', 'IOC.NS'),
+        ('BPCL.NS', 'IOC.NS'),
+    ],
+    'pharma': [
+        ('DIVISLAB.NS', 'LUPIN.NS'),
+        ('CIPLA.NS', 'DRREDDY.NS'),
+        ('SUNPHARMA.NS', 'CIPLA.NS'),
+    ],
+    'it': [
+        ('TCS.NS', 'INFY.NS'),
+        ('WIPRO.NS', 'INFY.NS'),
+        ('HCLTECH.NS', 'TCS.NS'),
+    ]
+}
+
+
+def run_all_analysis():
+    """Run analysis for all sector pairs"""
+    all_results = {}
     
-    elif request.method == 'POST':
-        # Get ticker from form
-        ticker = request.form.get('ticker', 'PGEL.NS').strip().upper()
-        
-        if not ticker:
-            flash('Please enter a valid ticker symbol', 'error')
-            return render_template('index.html', ticker="PGEL.NS")
-        
-        print(f"Analyzing ticker: {ticker}")
-        
-        # Perform analysis
-        analysis_result = analyze_stock(ticker)
-        
-        if not analysis_result['success']:
-            flash(f"Error analyzing {ticker}: {analysis_result['error']}", 'error')
-            return render_template('index.html', 
-                                 ticker=ticker,
-                                 error=analysis_result['error'])
-        
-        # Success - return analysis results
-        # Run LSTM predictor to estimate magnitude of change
-        lstm_result = predict_lstm_change(analysis_result.get('ticker', ticker))
-        lstm_info = {}
-        if lstm_result.get('success'):
-            lstm_info = {
-                'predicted_price': lstm_result.get('predicted_price'),
-                'predicted_change_pct': lstm_result.get('predicted_change_pct'),
-                'train_mape': lstm_result.get('train_mape')
-            }
-        else:
-            lstm_info = {'error': lstm_result.get('error')}
+    for sector, pairs in STOCK_PAIRS.items():
+        print(f"\n🔍 Analyzing {sector.upper()} sector...")
+        all_results[sector] = analyze_stock_pairs(pairs, period='2y')
+    
+    return all_results
 
-        # Get GAFF pattern detection data (best-effort, non-blocking)
-        import io, contextlib
-        try:
-            buf = io.StringIO()
-            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
-                gaff_result = detect_gaff(ticker)
-        except Exception as e:
-            gaff_result = {'patterns': [], 'forecast': None, 'error': str(e)}
 
-        # Synthesize a short summary for all detected GAFF patterns
-        patterns_list = gaff_result.get('patterns') if isinstance(gaff_result, dict) else []
-        if patterns_list is None:
-            patterns_list = []
-        # Ensure list-like
-        try:
-            patterns_list = list(patterns_list)
-        except Exception:
-            patterns_list = []
+def get_cached_results(force_refresh=False):
+    """Get cached results or run new analysis"""
+    if force_refresh or analysis_cache['data'] is None:
+        print("📊 Running analysis...")
+        analysis_cache['data'] = run_all_analysis()
+        analysis_cache['timestamp'] = datetime.now().isoformat()
+    
+    return analysis_cache['data']
 
-        total_patterns = len(patterns_list)
-        counts = Counter([p.get('pattern', p.get('name', 'unknown')) for p in patterns_list])
-        top_pattern, top_count = (counts.most_common(1)[0] if counts else ('None', 0))
 
-        conf_vals = []
-        for p in patterns_list:
-            c = p.get('confidence')
-            if c is None:
-                continue
-            try:
-                c = float(c)
-                if c <= 1:
-                    c = c * 100.0
-                conf_vals.append(c)
-            except Exception:
-                continue
+@app.route('/')
+def index():
+    """Main page with analysis results"""
+    # Template will fetch data via /api/analysis endpoint
+    return render_template('analysis.html')
 
-        avg_confidence = round(sum(conf_vals) / len(conf_vals), 2) if conf_vals else None
-        breakout_count = sum(1 for p in patterns_list if p.get('breakout'))
 
-        # Try to compute support/resistance and suggested buy levels
-        suggested = {}
-        try:
-            import yfinance as yf
-            df = yf.Ticker(ticker).history(period='6mo')
-            if df is not None and len(df) > 0:
-                latest = df['Close'].iloc[-1]
-                support = float(df['Low'].rolling(window=20, min_periods=1).min().iloc[-1])
-                resistance = float(df['High'].rolling(window=20, min_periods=1).max().iloc[-1])
+@app.route('/api/analysis')
+def api_analysis():
+    """API endpoint for analysis results"""
+    results = get_cached_results()
+    return jsonify({
+        'status': 'success',
+        'timestamp': analysis_cache['timestamp'],
+        'data': results
+    })
 
-                # Default suggestions
-                suggested['current_price'] = round(latest, 2)
-                suggested['support'] = round(support, 2)
-                suggested['resistance'] = round(resistance, 2)
 
-                # Pattern-based suggestions
-                if top_pattern and top_pattern != 'None':
-                    if 'inverted' in top_pattern.lower() or 'double' in top_pattern.lower():
-                        suggested['buy'] = round(support * 1.01, 2)
-                        suggested['stop_loss'] = round(support * 0.96, 2)
-                        suggested['note'] = 'Buy near support on pullback; set tight stop below recent low.'
-                    elif 'engulfing' in top_pattern.lower():
-                        suggested['buy'] = round(latest * 0.995, 2)
-                        suggested['stop_loss'] = round(latest * 0.97, 2)
-                        suggested['note'] = 'Consider buy on confirmation candle or minor pullback.'
-                    elif 'ascending' in top_pattern.lower() or 'triangle' in top_pattern.lower():
-                        suggested['buy'] = round(resistance * 1.01, 2)
-                        suggested['stop_loss'] = round(support * 0.98, 2)
-                        suggested['note'] = 'Buy on breakout above resistance with volume confirmation.'
-                    else:
-                        suggested['buy'] = round(latest * 0.995, 2)
-                        suggested['stop_loss'] = round(latest * 0.97, 2)
-                        suggested['note'] = 'Generic suggestion: buy on pullback or breakout confirmation.'
-                else:
-                    suggested['buy'] = round(support * 1.01, 2)
-                    suggested['stop_loss'] = round(support * 0.96, 2)
-                    suggested['note'] = 'No clear pattern: consider buying near support or wait for breakout.'
-            else:
-                suggested = {}
-        except Exception:
-            suggested = {}
+@app.route('/api/refresh', methods=['POST'])
+def api_refresh():
+    """Force refresh analysis"""
+    results = get_cached_results(force_refresh=True)
+    return jsonify({
+        'status': 'success',
+        'message': 'Analysis refreshed',
+        'timestamp': analysis_cache['timestamp'],
+        'data': results
+    })
 
-        gaff_summary = {
-            'total': total_patterns,
-            'counts': dict(counts),
-            'top_pattern': top_pattern,
-            'top_count': top_count,
-            'avg_confidence': avg_confidence,
-            'breakouts': int(breakout_count),
-            'suggested': suggested
-        }
 
-        flash(f'Analysis completed successfully for {ticker}!', 'success')
-        return render_template('index.html',
-                     ticker=analysis_result['ticker'],
-                     summary=analysis_result['summary'],
-                     plot_base64=analysis_result.get('plot_base64'),
-                     current_price=analysis_result['current_price'],
-                     forecast=analysis_result.get('forecast', {}),
-                     forecast_with_sentiment=analysis_result.get('forecast_with_sentiment', {}),
-                     indicators=analysis_result.get('indicators', {}),
-                     model_performance=analysis_result.get('model_performance', {}),
-                     patterns=analysis_result.get('patterns', {}),
-                     success=True,
-                     direction=analysis_result.get('direction'),
-                     lstm=lstm_info,
-                     gaff=gaff_result,
-                     gaff_summary=gaff_summary)
+@app.route('/api/analysis/<sector>')
+def api_sector_analysis(sector):
+    """Get analysis for specific sector"""
+    results = get_cached_results()
+    
+    if sector in results:
+        return jsonify({
+            'status': 'success',
+            'sector': sector,
+            'data': results[sector]
+        })
+    else:
+        return jsonify({
+            'status': 'error',
+            'message': f'Sector {sector} not found'
+        }), 404
 
-@app.route('/index')
-def index_check():
 
-    # Provide quick access to recommender via a simple GET
+@app.route('/api/pair/<ticker1>/<ticker2>')
+def api_pair_analysis(ticker1, ticker2):
+    """Analyze specific stock pair"""
     try:
-        rec = run_recommender()
-    except Exception:
-        rec = {'error': 'failed to run recommender'}
-    return render_template('index.html', ticker="PGEL.NS", recommender=rec)
+        analyzer = StockPairAnalyzer(f"{ticker1}.NS", f"{ticker2}.NS")
+        analyzer.fetch_data(period='2y')
+        result = analyzer.run_analysis()
+        
+        return jsonify({
+            'status': 'success',
+            'data': result
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
 
 @app.errorhandler(404)
-def not_found_error(error):
-    return render_template('index.html', ticker="PGEL.NS"), 404
+def not_found(error):
+    return jsonify({
+        'status': 'error',
+        'message': 'Not found'
+    }), 404
+
 
 @app.errorhandler(500)
-def internal_error(error):
-    flash('An internal error occurred. Please try again.', 'error')
-    return render_template('index.html', ticker="PGEL.NS"), 500
+def server_error(error):
+    return jsonify({
+        'status': 'error',
+        'message': 'Server error'
+    }), 500
+
 
 if __name__ == '__main__':
-    # Read port from environment variable (Hugging Face Spaces uses PORT=7860 by default)
-    port = int(os.getenv('PORT', 7860))
-    host = '0.0.0.0'  # Listen on all interfaces for containerized deployment
+    print("\n" + "="*70)
+    print("🚀 STOCK ANALYSIS APPLICATION - COINTEGRATION & DTW")
+    print("="*70)
+    print("📍 Open browser: http://127.0.0.1:7860")
+    print("🔄 API Endpoints:")
+    print("   - GET  /api/analysis          (all results)")
+    print("   - GET  /api/analysis/<sector> (sector results)")
+    print("   - POST /api/refresh           (force refresh)")
+    print("   - GET  /api/pair/<t1>/<t2>    (pair analysis)")
+    print("="*70 + "\n")
     
-    print("🚀 Starting Stock Analysis App...")
-    print(f"📡 Listening on {host}:{port}")
-    print("🔗 Ensure templates/ and static/ folders exist in deployment")
-    
-    # Disable Flask dev server warnings in production
-    app.run(host=host, port=port, threaded=True, debug=False)
+    app.run(host='127.0.0.1', port=7860, debug=False, use_reloader=False)
 

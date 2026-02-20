@@ -12,29 +12,10 @@ services:
       - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
       - FLASK_ENV=${FLASK_ENV:-production}
       - PYTHONUNBUFFERED=1
-    # Resource limits
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 2G
-        reservations:
-          cpus: '1'
-          memory: 1G
-    # Health check
+    restart: on-failure
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:7860/"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 10s
-    # Don't restart infinitely on error
-    restart_policy:
-      condition: on-failure
-      max_attempts: 3
-    # Logging
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"

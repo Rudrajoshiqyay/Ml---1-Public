@@ -3,6 +3,20 @@ from prophet_v2 import analyze_stock
 from lstm_predictor import predict_lstm_change
 from collections import Counter
 import os
+import sys
+import json
+from threading import Thread
+import time
+
+# Import stock recommender
+try:
+    from stockforcating.stock_recommender import run_recommender
+    _HAS_RECOMMENDER = True
+except Exception as e:
+    print(f"Warning: Could not import stock recommender: {e}")
+    _HAS_RECOMMENDER = False
+    def run_recommender(*args, **kwargs):
+        return {}
 
 try:
     from gaff_pattern_reconiton import detect as detect_gaff
@@ -13,11 +27,58 @@ except Exception:
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
 
+# Global cache for recommendations
+_recommendations_cache = {}
+_cache_timestamp = 0
+_CACHE_DURATION = 3600  # Cache for 1 hour
+
+def get_recommendations_cached():
+    """Get cached recommendations or generate new ones"""
+    global _recommendations_cache, _cache_timestamp
+    
+    current_time = time.time()
+    # Use cache if it's fresh
+    if _recommendations_cache and (current_time - _cache_timestamp) < _CACHE_DURATION:
+        return _recommendations_cache
+    
+    # Generate new recommendations
+    if _HAS_RECOMMENDER:
+        try:
+            print("📊 Generating stock recommendations (this may take a minute)...")
+            _recommendations_cache = run_recommender(period='1y')
+            _cache_timestamp = current_time
+            print("✓ Stock recommendations ready!")
+        except Exception as e:
+            print(f"Error generating recommendations: {e}")
+            _recommendations_cache = {}
+    
+    return _recommendations_cache
+
+# Pre-generate recommendations on app startup (background thread)
+def _init_recommendations():
+    """Initialize recommendations in background"""
+    try:
+        get_recommendations_cached()
+    except Exception as e:
+        print(f"Background recommendation init error: {e}")
+
+if _HAS_RECOMMENDER:
+    init_thread = Thread(target=_init_recommendations, daemon=True)
+    init_thread.start()
+
+app = Flask(__name__)
+app.secret_key = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
+    # Get cached recommendations
+    recommendations = get_recommendations_cached()
+    
     if request.method == 'GET':
-        # Show the form with default ticker
-        return render_template('index.html', ticker="PGEL.NS")
+        # Show the form with default ticker and recommendations
+        return render_template('index.html', 
+                             ticker="PGEL.NS",
+                             recommendations=recommendations)
     
     elif request.method == 'POST':
         # Get ticker from form
@@ -25,7 +86,7 @@ def index():
         
         if not ticker:
             flash('Please enter a valid ticker symbol', 'error')
-            return render_template('index.html', ticker="PGEL.NS")
+            return render_template('index.html', ticker="PGEL.NS", recommendations=recommendations)
         
         print(f"Analyzing ticker: {ticker}")
         
@@ -36,7 +97,8 @@ def index():
             flash(f"Error analyzing {ticker}: {analysis_result['error']}", 'error')
             return render_template('index.html', 
                                  ticker=ticker,
-                                 error=analysis_result['error'])
+                                 error=analysis_result['error'],
+                                 recommendations=recommendations)
         
         # Success - return analysis results
         # Run LSTM predictor to estimate magnitude of change
@@ -157,7 +219,8 @@ def index():
                      direction=analysis_result.get('direction'),
                      lstm=lstm_info,
                      gaff=gaff_result,
-                     gaff_summary=gaff_summary)
+                     gaff_summary=gaff_summary,
+                     recommendations=recommendations)
 
 @app.route('/index')
 def index_check():
@@ -166,12 +229,24 @@ def index_check():
 
 @app.errorhandler(404)
 def not_found_error(error):
-    return render_template('index.html', ticker="PGEL.NS"), 404
+    recommendations = {}
+    if _HAS_RECOMMENDER:
+        try:
+            recommendations = run_recommender(period='1y')
+        except Exception:
+            pass
+    return render_template('index.html', ticker="PGEL.NS", recommendations=recommendations), 404
 
 @app.errorhandler(500)
 def internal_error(error):
     flash('An internal error occurred. Please try again.', 'error')
-    return render_template('index.html', ticker="PGEL.NS"), 500
+    recommendations = {}
+    if _HAS_RECOMMENDER:
+        try:
+            recommendations = run_recommender(period='1y')
+        except Exception:
+            pass
+    return render_template('index.html', ticker="PGEL.NS", recommendations=recommendations), 500
 
 if __name__ == '__main__':
     # Read port from environment variable (Hugging Face Spaces uses PORT=7860 by default)

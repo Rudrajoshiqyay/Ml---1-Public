@@ -134,6 +134,133 @@
             margin-top: 15px;
         }
         
+        /* Stock Recommendations Styles */
+        .recommendations-section {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .recommendations-title {
+            font-size: 1.6em;
+            color: #333;
+            margin-bottom: 25px;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .sector-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .sector-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-left: 5px solid;
+        }
+        
+        .sector-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .sector-card.pharma {
+            border-left-color: #e74c3c;
+        }
+        
+        .sector-card.pharma .sector-name {
+            color: #e74c3c;
+        }
+        
+        .sector-card.it {
+            border-left-color: #3498db;
+        }
+        
+        .sector-card.it .sector-name {
+            color: #3498db;
+        }
+        
+        .sector-card.energy {
+            border-left-color: #f39c12;
+        }
+        
+        .sector-card.energy .sector-name {
+            color: #f39c12;
+        }
+        
+        .sector-name {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .sector-label {
+            font-size: 0.85em;
+            background: rgba(0, 0, 0, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        
+        .stock-recommendation {
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.95em;
+        }
+        
+        .stock-recommendation:last-child {
+            border-bottom: none;
+        }
+        
+        .stock-ticker {
+            font-weight: 600;
+            color: #333;
+            flex: 1;
+        }
+        
+        .stock-metric {
+            display: flex;
+            gap: 15px;
+            font-size: 0.85em;
+            color: #666;
+        }
+        
+        .metric-badge {
+            background: #f0f0f0;
+            padding: 3px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+        
+        .metric-value {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .recommendation-note {
+            background: #e8f4f8;
+            border-left: 3px solid #3498db;
+            padding: 12px;
+            border-radius: 4px;
+            margin-top: 15px;
+            font-size: 0.9em;
+            color: #2c3e50;
+            line-height: 1.5;
+        }
+        
         .alert {
             padding: 15px 20px;
             border-radius: 8px;
@@ -493,6 +620,94 @@
                             <span class="metric-value">None detected</span>
                         </div>
                     {% endif %}
+                </div>
+            {% endif %}
+            
+            <!-- Stock Recommendations Section -->
+            {% if recommendations %}
+                <div class="recommendations-section">
+                    <h2 class="recommendations-title">⭐ Cointegration & DTW Based Stock Recommendations</h2>
+                    
+                    {% set pharma_data = recommendations.get('Pharma', {}) %}
+                    {% set it_data = recommendations.get('IT', {}) %}
+                    {% set energy_data = recommendations.get('Energy', {}) %}
+                    
+                    <div class="sector-container">
+                        <!-- Pharma Sector -->
+                        {% if pharma_data and pharma_data.get('rank_by_cointegration') %}
+                            <div class="sector-card pharma">
+                                <div class="sector-name">
+                                    💊 Pharma
+                                    <span class="sector-label">{{ pharma_data.get('summary', {}).get('count_analyzed', 0) }} analyzed</span>
+                                </div>
+                                <div style="font-size: 0.85em; color: #666; margin-bottom: 12px; font-weight: 500;">
+                                    Most Cointegrated:
+                                </div>
+                                {% for stock in pharma_data.get('rank_by_cointegration', {}).get('most_cointegrated', [])[:3] %}
+                                    <div class="stock-recommendation">
+                                        <span class="stock-ticker">{{ stock.get('ticker', '') }}</span>
+                                        <div class="stock-metric">
+                                            <span class="metric-badge">p-value: <span class="metric-value">{{ "%.4f"|format(stock.get('pvalue', 0)) }}</span></span>
+                                            <span class="metric-badge">DTW: <span class="metric-value">{{ "%.2f"|format(stock.get('dtw', 0)) }}</span></span>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                                <div class="recommendation-note">
+                                    Lower p-values indicate stronger cointegration with sector index. Lower DTW distances show similar price patterns.
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- IT Sector -->
+                        {% if it_data and it_data.get('rank_by_cointegration') %}
+                            <div class="sector-card it">
+                                <div class="sector-name">
+                                    💻 IT
+                                    <span class="sector-label">{{ it_data.get('summary', {}).get('count_analyzed', 0) }} analyzed</span>
+                                </div>
+                                <div style="font-size: 0.85em; color: #666; margin-bottom: 12px; font-weight: 500;">
+                                    Most Cointegrated:
+                                </div>
+                                {% for stock in it_data.get('rank_by_cointegration', {}).get('most_cointegrated', [])[:3] %}
+                                    <div class="stock-recommendation">
+                                        <span class="stock-ticker">{{ stock.get('ticker', '') }}</span>
+                                        <div class="stock-metric">
+                                            <span class="metric-badge">p-value: <span class="metric-value">{{ "%.4f"|format(stock.get('pvalue', 0)) }}</span></span>
+                                            <span class="metric-badge">DTW: <span class="metric-value">{{ "%.2f"|format(stock.get('dtw', 0)) }}</span></span>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                                <div class="recommendation-note">
+                                    Lower p-values indicate stronger cointegration with sector index. Lower DTW distances show similar price patterns.
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Energy Sector -->
+                        {% if energy_data and energy_data.get('rank_by_cointegration') %}
+                            <div class="sector-card energy">
+                                <div class="sector-name">
+                                    ⚡ Energy
+                                    <span class="sector-label">{{ energy_data.get('summary', {}).get('count_analyzed', 0) }} analyzed</span>
+                                </div>
+                                <div style="font-size: 0.85em; color: #666; margin-bottom: 12px; font-weight: 500;">
+                                    Most Cointegrated:
+                                </div>
+                                {% for stock in energy_data.get('rank_by_cointegration', {}).get('most_cointegrated', [])[:3] %}
+                                    <div class="stock-recommendation">
+                                        <span class="stock-ticker">{{ stock.get('ticker', '') }}</span>
+                                        <div class="stock-metric">
+                                            <span class="metric-badge">p-value: <span class="metric-value">{{ "%.4f"|format(stock.get('pvalue', 0)) }}</span></span>
+                                            <span class="metric-badge">DTW: <span class="metric-value">{{ "%.2f"|format(stock.get('dtw', 0)) }}</span></span>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                                <div class="recommendation-note">
+                                    Lower p-values indicate stronger cointegration with sector index. Lower DTW distances show similar price patterns.
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
             {% endif %}
             
