@@ -18,8 +18,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import yfinance as yf
 
-
-
 # Optional heavy dependencies - import safely
 try:
     from sklearn.preprocessing import MinMaxScaler

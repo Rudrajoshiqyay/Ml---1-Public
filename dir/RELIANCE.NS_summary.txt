@@ -1,0 +1,16 @@
+RELIANCE.NS Technical Analysis Summary - 2025-07-02
+--------------------------------------------------------
+Current Price: Rs.1518.80
+3-Month Forecast Range: Rs.1182.19 - Rs.1844.82
+Median Forecast: Rs.1544.95
+
+Technical Indicators:
+• RSI (14): 67.20 (Neutral)
+• MACD Status: Bullish
+• Bollinger Bands: Within Bands (Normal Range)
+• VWAP: Rs.1460.50 | Price is above VWAP
+
+Trading Signals:
+• RSI Signal: HOLD
+• MACD Signal: BUY
+• Overall Trend: BULLISH

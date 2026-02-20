@@ -1,36 +1,36 @@
-TORNTPHARM.NS Advanced Analysis with Sentiment - 2026-02-19
+PGEL.NS Advanced Analysis with Sentiment - 2026-01-13
 ========================================================
 
 CURRENT STATUS:
-• Price: Rs.4226.40
-• Market Sentiment: Positive (0.269)
+• Price: Rs.591.70
+• Market Sentiment: Positive (0.158)
 • Sentiment Impact: Bullish momentum detected
 
 MODEL PERFORMANCE:
-• Standard Prophet MAPE: 1.20%
-• Sentiment-Enhanced MAPE: 14.82%
-• Accuracy Improvement: -13.63% ✗
+• Standard Prophet MAPE: 3.95%
+• Sentiment-Enhanced MAPE: 17.45%
+• Accuracy Improvement: -13.50% ✗
 • Detected Pattern: inverted_w
-• Pattern Confidence: 97.36%
+• Pattern Confidence: 98.67%
 • Pattern Breakout: Yes
 
 3-MONTH FORECAST (WITHOUT SENTIMENT):
-• Range: Rs.3728.15 - Rs.5033.31
-• Median: Rs.4365.31
-• Change: +3.29%
+• Range: Rs.338.88 - Rs.1018.98
+• Median: Rs.659.56
+• Change: +11.47%
 
 3-MONTH FORECAST (WITH SENTIMENT):
-• Range: Rs.3423.76 - Rs.4388.75
-• Median: Rs.3888.80
-• Change: -7.99%
-• Sentiment Adjustment: -10.92%
-• Adjusted Median (support-aware): Rs.3843.45 (fell to next support)
+• Range: Rs.129.04 - Rs.474.77
+• Median: Rs.307.64
+• Change: -48.01%
+• Sentiment Adjustment: -53.36%
+• Adjusted Median (support-aware): Rs.300.48 (fell to next support)
 
 TECHNICAL INDICATORS:
-• RSI (14): 68.66 (Neutral)
+• RSI (14): 51.66 (Neutral)
 • MACD: Bullish
 • Bollinger Bands: Within Bands (Normal Range)
-• VWAP: Rs.4053.51 (Price is above)
+• VWAP: Rs.595.87 (Price is below)
 
 TRADING SIGNALS:
 • RSI Signal: HOLD
